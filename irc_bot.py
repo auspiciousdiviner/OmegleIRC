@@ -27,7 +27,7 @@ Hostname = "Omegle"
 Nick     = "SomeOmegler"
 Realname = "Omegler"
 
-Channel = "#amagital"
+Channel = "##oneplusone"
 
 def pollReplyQueue(Socket):
     global ReplyQueue
