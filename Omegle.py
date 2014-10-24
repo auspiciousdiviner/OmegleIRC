@@ -2,52 +2,43 @@
 Module for interfacing with Omegle
 """
 
-import socket
-from urllib.parse import urlencode
+import ast
+import urllib.request
+import urllib.parse
 
 def send( Page, Message ):
-    OmegleIP = socket.gethostbyname("omegle.com")
     
-    Site = socket.socket()
+    SiteRequest = urllib.request.Request( 'http://omegle.com/' + Page, urllib.parse.urlencode(Message).encode('utf-8') )
+    SiteReponse = urllib.request.urlopen(SiteRequest)
     
-    Site.connect((OmegleIP, 80)) # Omegle's IP address, plus port 80
+    return SiteReponse.read()
     
-    Site.send("POST /{0} HTTP/1.1\r\n".format(Page).encode('utf-8'))
-    Site.send("Host: omegle.com\r\n".encode('utf-8'))
-        
-    # We need a message, if it's blank we will not get out stranger's ID
-    if not Message:
-        Message = "Hi"
-    
-    Site.send("Content-length: {0}\r\n".format(len(Message)).encode('utf-8'))
-    Site.send("POSTDATA:{0}\r\n".format(Message).encode('utf-8'))
-    Site.send("\r\n".encode('utf-8'))
-    
-    Recieved = Site.recv(8192)
-    
-    Site.close()
-    
-    return Recieved
 
 def startSession():
-    Recieved = send("start", "").split(b"\r\n")
+    # not sure what the rcs means or why it works but it works! (I'm such a great programmer)
+    Recieved = send("start", {"rcs" : 1})
     
-    return Recieved[-2][8:-1].decode() # This returns the stranger ID
+    return Recieved[1:-1].decode() # This returns the stranger ID without having to parse the damned thing
 
 def say( Message, StrangerID ):
-    send("send", "&msg={0}&id={1}".format(Message, StrangerID))
+    send("send", {'msg' : Message, 'id' : StrangerID})
 
 def getEvent( StrangerID ):
-    Recieved = send("events", StrangerID).split(b"\r\n")
+    Received = send("events", {'id' : StrangerID}).decode()
     
-    return Recieved
+    # We get null only if we're disconnected/invalid id
+    if Received == 'null':
+        return []
+    
+    else:
+        return ast.literal_eval(Received) #decodes the string and parses it to a proper list
 
 def startTyping( StrangerID ):
-    send("typing", "&id={0}".format(StrangerID))
+    send("typing", {'id' : StrangerID})
     
 def stopTyping( StrangerID ):
-    send("typing", "&id={0}".format(StrangerID))
+    send("typing", {'id' : StrangerID})
         
 def endSession( StrangerID ):
-    send("disconnect", "&id={0}".format(StrangerID))
+    send("disconnect", {'id' : StrangerID})
     
